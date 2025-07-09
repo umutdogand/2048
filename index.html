@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>2048: Love Version 💗</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #ffe6f0, #ffe0cc);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 30px 10px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #e91e63;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .unlocked-images {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .unlocked-images img {
+      width: 60px;
+      height: 60px;
+      opacity: 0.2;
+      border-radius: 5px;
+      transition: opacity 0.3s;
+    }
+
+    .unlocked-images img.revealed {
+      opacity: 1;
+    }
+.unlocked-images .img-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+  margin: 5px;
+}
+
+.unlocked-images .img-wrapper img {
+  width: 60px;
+  height: 60px;
+  opacity: 0.2;
+  border-radius: 5px;
+  transition: opacity 0.3s;
+}
+
+.unlocked-images .img-wrapper img.revealed {
+  opacity: 1;
+}
+
+.unlocked-images .img-wrapper span {
+  font-size: 0.8rem;
+  color: #444;
+  margin-top: 4px;
+}
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 100px);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .tile {
+      width: 100px;
+      height: 100px;
+      background: #f8bbd0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+    }
+
+    .tile img {
+      width: 80px;
+      height: 80px;
+      border-radius: 6px;
+    }
+
+    #win-message {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      flex-direction: column;
+      z-index: 999;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    #win-message h2 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #ff69b4;
+      animation: pulse 1s infinite;
+    }
+
+    #win-message button {
+      padding: 10px 20px;
+      font-size: 1.2rem;
+      background-color: #ff4081;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+  </style>
+</head>
+<body>
+  <h1>2048: Love Version 💗</h1>
+  <h3 style="color:#e91e63; margin-bottom:8px; text-align:center;">Our Journey</h3>
+  <div class="unlocked-images" id="unlockedImages"></div>
+  <div class="grid" id="grid"></div>
+  <button id="restartBtn" style="
+		margin-top: 20px;
+		padding: 10px 25px;
+		font-size: 1.2rem;
+		background-color: #ff4081;
+		color: white;
+		border: none;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: background-color 0.3s;
+		">
+  Restart Game
+</button>
+
+  <div id="win-message">
+    <h2>You reached 2048! 💖<br>You've unlocked all the love levels!</h2>
+    <button onclick="restartGame()">Play Again</button>
+  </div>
+
+  <script>
+    const gridElement = document.getElementById("grid");
+    const winMessage = document.getElementById("win-message");
+    const unlockedImagesElement = document.getElementById("unlockedImages");
+    let board = Array(4).fill().map(() => Array(4).fill(0));
+    let hasWon = false;
+    let unlockedImages = new Set();
+
+    const valueToImage = {
+      2: "images/1.jpg",
+      4: "images/2.jpg",
+      8: "images/3.jpg",
+      16: "images/4.jpg",
+      32: "images/5.jpg",
+      64: "images/6.jpg",
+      128: "images/7.jpg",
+      256: "images/8.jpg",
+      512: "images/9.jpg",
+      1024: "images/10.jpg",
+      2048: "images/11.jpg"
+    };
+
+    function setup2048() {
+      board = Array(4).fill().map(() => Array(4).fill(0));
+      hasWon = false;
+      unlockedImages.clear();
+      winMessage.style.display = "none";
+      for (let i = 0; i < 2; i++) addRandomTile();
+      drawBoard();
+    }
+
+    function updateUnlockedImages() {
+		unlockedImagesElement.innerHTML = "";
+  Object.entries(valueToImage).forEach(([val, src]) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "img-wrapper";
+    const img = document.createElement("img");
+    img.src = src;
+    if (unlockedImages.has(+val)) img.className = "revealed";
+    const label = document.createElement("span");
+    label.textContent = val;
+    wrapper.appendChild(img);
+    wrapper.appendChild(label);
+    unlockedImagesElement.appendChild(wrapper);
+  });
+    }
+
+    function drawBoard() {
+      gridElement.innerHTML = "";
+      board.forEach(row => {
+        row.forEach(val => {
+          if (val && valueToImage[val]) unlockedImages.add(val);
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          if (val && valueToImage[val]) {
+            const img = document.createElement("img");
+            img.src = valueToImage[val];
+            img.alt = val;
+            tile.appendChild(img);
+          }
+          gridElement.appendChild(tile);
+        });
+      });
+
+      updateUnlockedImages();
+
+      if (!hasWon && board.flat().includes(8192)) {
+        hasWon = true;
+        winMessage.style.display = "flex";
+      }
+    }
+
+    function addRandomTile() {
+      let empty = [];
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          if (board[r][c] === 0) empty.push([r, c]);
+        }
+      }
+      if (empty.length) {
+        let [r, c] = empty[Math.floor(Math.random() * empty.length)];
+        board[r][c] = Math.random() < 0.9 ? 2 : 4;
+      }
+    }
+
+    function merge(row) {
+      row = row.filter(v => v);
+      for (let i = 0; i < row.length - 1; i++) {
+        if (row[i] === row[i + 1]) {
+          row[i] *= 2;
+          row[i + 1] = 0;
+        }
+      }
+      return row.filter(v => v).concat(Array(4 - row.filter(v => v).length).fill(0));
+    }
+
+    function rotateLeft(b) {
+      return b[0].map((_, i) => b.map(row => row[i])).reverse();
+    }
+
+    function rotateRight(b) {
+      return b[0].map((_, i) => b.map(row => row[i]).reverse());
+    }
+
+    function flip(b) {
+      return b.map(row => row.slice().reverse());
+    }
+
+    function reverseTransform(transform, b) {
+      if (transform === rotateLeft) return rotateRight(b);
+      if (transform === rotateRight) return rotateLeft(b);
+      if (transform === flip) return flip(b);
+      return b;
+    }
+
+    function moveAndUpdate(transform) {
+      if (!transform || hasWon) return;
+      const rotated = transform(board.map(row => [...row]));
+      const moved = rotated.map(merge);
+      const reverted = reverseTransform(transform, moved);
+      if (JSON.stringify(board) !== JSON.stringify(reverted)) {
+        board = reverted;
+        addRandomTile();
+        drawBoard();
+      }
+    }
+
+    function handleMove(e) {
+      const keyMap = {
+        ArrowUp: rotateLeft,
+        ArrowDown: rotateRight,
+        ArrowLeft: b => b,
+        ArrowRight: flip
+      };
+      moveAndUpdate(keyMap[e.code]);
+    }
+
+    function restartGame() {
+      setup2048();
+    }
+
+    document.addEventListener("keydown", handleMove);
+
+    // Mobile swipe support
+    let touchStartX = 0, touchStartY = 0;
+    document.addEventListener("touchstart", e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+
+    document.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+      if (Math.max(absDx, absDy) > 30) {
+        if (absDx > absDy) {
+          moveAndUpdate(dx > 0 ? flip : b => b);
+        } else {
+          moveAndUpdate(dy > 0 ? rotateRight : rotateLeft);
+        }
+      }
+    });
+
+    setup2048();
+	document.getElementById('restartBtn').addEventListener('click', restartGame);
+  </script>
+</body>
+</html>
