@@ -313,15 +313,23 @@
     document.addEventListener("keydown", handleMove);
 
     // Mobile swipe support
+const noScrollDiv = document.getElementById('grid');
+
+noScrollDiv.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+}, { passive: false });
+
+noScrollDiv.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+}, { passive: false });
+    
     let touchStartX = 0, touchStartY = 0;
     document.addEventListener("touchstart", e => {
-      e.preventDefault();
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
-    }, { passive: false });
+    });
 
     document.addEventListener("touchend", e => {
-      e.preventDefault();
       const dx = e.changedTouches[0].clientX - touchStartX;
       const dy = e.changedTouches[0].clientY - touchStartY;
       const absDx = Math.abs(dx);
@@ -333,10 +341,10 @@
           moveAndUpdate(dy > 0 ? rotateRight : rotateLeft);
         }
       }
-    }, { passive: false });
+    });
 
     setup2048();
-	document.getElementById('restartBtn').addEventListener('click', restartGame);
+   document.getElementById('restartBtn').addEventListener('click', restartGame);
   </script>
 </body>
 </html>
